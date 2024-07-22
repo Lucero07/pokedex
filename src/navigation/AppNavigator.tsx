@@ -47,8 +47,8 @@ const AppNavigator: React.FC = () => {
           component={DetailScreen}
           options={{
             headerTitle: () => (
-              <View style={styles.headerTitleContainerDetail}>
-                <Text style={styles.title}> {pokemonDetails ? pokemonDetails?.name : 'Pokémon Details'}</Text>
+              <View>
+                <Text style={styles.title}> {pokemonDetails ? pokemonDetails.name : 'Pokémon Details'}</Text>
               </View>
             ),
           }}
