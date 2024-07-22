@@ -49,7 +49,7 @@ export const PokemonProvider: React.FC<PokemonProviderProps> = ({ children }) =>
 
   useEffect(() => {
     async function loadPokemons() {
-      const response = await api.get('pokemon?limit=30');
+      const response = await api.get('pokemon?limit=300');
       const fetchedPokemons = response.data.results.map(
         (pokemon: any, index: number) => ({
           ...pokemon,
