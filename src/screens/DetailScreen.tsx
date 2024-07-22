@@ -7,10 +7,39 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import ProgressBar from 'react-native-progress/Bar'; 
-import { Ionicons } from 'react-native-vector-icons'; 
+import {
+  useNavigation,
+  useRoute,
+  RouteProp,
+  useFocusEffect,
+} from '@react-navigation/native';
+import ProgressBar from 'react-native-progress/Bar';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { usePokemon } from '../hooks/usePokemon';
+import Chip from '../components/ChipType';
+import { useBackgroundColor } from '../context/BackgroundColorContext';
+
+const typeColors: { [key: string]: string } = {
+  grass: '#7AC74C',
+  fire: '#F08030',
+  water: '#6390F0',
+  electric: '#F7D02C',
+  psychic: '#F95587',
+  ice: '#96D9D6',
+  dragon: '#6F35FC',
+  dark: '#705746',
+  fairy: '#D685AD',
+  fighting: '#C22E28',
+  flying: '#A98FF3',
+  poison: '#A33F30',
+  ground: '#E2BF65',
+  rock: '#B6A136',
+  bug: '#A6B91A',
+  ghost: '#735797',
+  steel: '#B7B7CE',
+  normal: '#A8A878',
+};
 
 type RootStackParamList = {
   Detail: { id: number };
@@ -20,8 +49,17 @@ const DetailScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RootStackParamList, 'Detail'>>();
   const { id } = route.params;
-  const { getPokemonById } = usePokemon();
-  const [pokemonDetails, setPokemonDetails] = useState<any>(null);
+  const {
+    getDescriptionById,
+    getPokemonById,
+    setPokemonDetails,
+    pokemonDetails,
+  } = usePokemon();
+  const { backgroundColor, setBackgroundColor } = useBackgroundColor();
+
+  const [pokemonDescription, setLocalPokemonDescription] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     const fetchPokemonDetails = async () => {
@@ -34,15 +72,39 @@ const DetailScreen: React.FC = () => {
         const pokemonData = await getPokemonById(id);
         if (pokemonData) {
           setPokemonDetails(pokemonData);
+          const primaryType = pokemonData.types[0].type.name;
+          const color = typeColors[primaryType] || 'blue'; // Color por defecto si no se encuentra el tipo
+          setBackgroundColor(color);
         } else {
           console.error('Pokémon not found');
+        }
+
+        const descriptionData = await getDescriptionById(id);
+        if (descriptionData) {
+          const englishDescription = descriptionData.flavor_text_entries.find(
+            (entry: any) => entry.language.name === 'en',
+          );
+          if (englishDescription) {
+            setLocalPokemonDescription(englishDescription.flavor_text);
+          }
+        } else {
+          console.error('Description not found');
         }
       } catch (error) {
         console.error('Error fetching Pokémon details:', error);
       }
     };
+
     fetchPokemonDetails();
-  }, [id, getPokemonById]);
+  }, [id]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      return () => {
+        setBackgroundColor('#DC0A2D');
+      };
+    }, [setBackgroundColor]),
+  );
 
   const handleNext = () => {
     const nextPokemonId = id + 1;
@@ -60,7 +122,7 @@ const DetailScreen: React.FC = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.halfBackgroundTop} />
+      <View style={[styles.halfBackgroundTop, { backgroundColor }]} />
       <View style={styles.halfBackgroundBottom} />
       <View style={styles.imageContainer}>
         <Image
@@ -72,31 +134,68 @@ const DetailScreen: React.FC = () => {
         />
       </View>
       <View style={styles.navButtons}>
-        <TouchableOpacity onPress={handlePrev} style={styles.navButton}>
-          <Ionicons name="arrow-back" size={30} color="#fff" />
-        </TouchableOpacity>
+        {id > 1 ? (
+          <TouchableOpacity onPress={handlePrev} style={styles.navButton}>
+            <Ionicons name="arrow-back" size={30} color="#fff" />
+          </TouchableOpacity>
+        ) : (
+          <Text></Text>
+        )}
+
         <TouchableOpacity onPress={handleNext} style={styles.navButton}>
           <Ionicons name="arrow-forward" size={30} color="#fff" />
         </TouchableOpacity>
       </View>
       <View style={styles.infoContainer}>
-        <Text style={styles.name}> {pokemonDetails.name} </Text>
+        <View style={styles.typesContainer}>
+          {pokemonDetails.types.map((typeInfo: any) => (
+            <Chip
+              key={typeInfo.type.name}
+              type={typeInfo.type.name}
+              color={typeColors[typeInfo.type.name] || '#CCCCCC'}
+            />
+          ))}
+        </View>
+
         <View style={styles.row}>
-          <Text style={styles.label}> Weight: </Text>
+          <Text style={styles.label}>
+            {' '}
+            <MaterialCommunityIcons
+              name="weight"
+              size={24}
+              color={backgroundColor}
+              style={styles.iconRight}
+            />
+          </Text>
           <Text style={styles.value}> {pokemonDetails.weight / 10} kg </Text>
-          <Text style={styles.label}> Height: </Text>
+          <Text style={styles.label}>
+            {' '}
+            <MaterialCommunityIcons
+              name="human-male-height"
+              size={24}
+              color={backgroundColor}
+              style={styles.iconRight}
+            />
+          </Text>
           <Text style={styles.value}> {pokemonDetails.height / 10} m </Text>
-          <Text style={styles.label}> Moves: </Text>
+          <Text style={[styles.label, { color: backgroundColor }]}> Moves</Text>
           <Text style={styles.value}> {pokemonDetails.moves.length} </Text>
         </View>
-        <Text style={styles.sectionTitle}> Stats </Text>
+        <Text style={styles.sectionTitle}>Description</Text>
+        <View style={styles.descriptionContainer}>
+          <Text style={styles.description}>{pokemonDescription}</Text>
+        </View>
+
+        <Text style={[styles.sectionTitle, { color: backgroundColor }]}>
+          {' '}
+          Stats{' '}
+        </Text>
         {pokemonDetails.stats.map((stat: any) => (
           <View key={stat.stat.name} style={styles.statContainer}>
             <Text style={styles.statName}> {stat.stat.name} </Text>
             <ProgressBar
-              style={styles.progressBar}
               progress={stat.base_stat / 100}
-              color="#DC0A2D"
+              color={backgroundColor}
             />
           </View>
         ))}
@@ -117,7 +216,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: '50%',
-    backgroundColor: '#DC0A2D',
   },
   halfBackgroundBottom: {
     position: 'absolute',
@@ -128,11 +226,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   imageContainer: {
-    alignItems: 'center' ,
+    alignItems: 'center',
+    marginVertical: 20,
   },
   image: {
-    width: 200,
-    height: 200,
+    width: 100,
+    height: 100,
   },
   navButtons: {
     flexDirection: 'row',
@@ -161,6 +260,21 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     textTransform: 'capitalize',
+  },
+  descriptionContainer: {
+    width: '100%',
+  },
+  description: {
+    fontSize: 16,
+    marginTop: 10,
+    textAlign: 'center',
+    width: '100%',
+  },
+  typesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginBottom: 10,
   },
   row: {
     flexDirection: 'row',
@@ -191,10 +305,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     textTransform: 'capitalize',
-  },
-  progressBar: {
-    flex: 2,
-    height: 10,
   },
 });
 

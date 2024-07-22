@@ -6,16 +6,14 @@ import { StackNavigationProp } from '@react-navigation/stack';
 
 export type RootStackParamList = {
   Home: undefined;
-  Detail: { id: number }; 
+  Detail: { id: number };
 };
 
 interface PokemonCardProps {
   name: string;
   id: number;
-  navigation: StackNavigationProp<RootStackParamList, 'Home'>; 
-} 
-
-
+  navigation: StackNavigationProp<RootStackParamList, 'Home'>;
+}
 
 const PokemonCard: React.FC<PokemonCardProps> = ({ name, id }) => {
   const navigation = useNavigation();
@@ -50,8 +48,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     margin: 10,
-    width: '30%', 
-    aspectRatio: 1, 
+    width: '30%',
+    aspectRatio: 1,
     borderRadius: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
