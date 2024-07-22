@@ -7,37 +7,51 @@ interface Pokemon {
   id: number;
 }
 
+interface PokemonDetails {
+  name: string;
+  url: string;
+  id: number;
+  weight: number;
+  height: number;
+  moves: any[];
+  stats: { stat: { name: string }; base_stat: number }[];
+}
+
 interface PokemonContextData {
   pokemons: Pokemon[];
-  getPokemonById(id: number): Pokemon | undefined;
+  pokemonDetails: PokemonDetails | null;
+  getPokemonById(id: number): Promise<PokemonDetails | null>;
   searchPokemon(name: string): Pokemon[];
   sortPokemonsByName(): void;
   sortPokemonsById(): void;
 }
 
-const PokemonContext = createContext<PokemonContextData>(
-  {} as PokemonContextData,
-);
+const PokemonContext = createContext<PokemonContextData>({} as PokemonContextData);
 
 export const PokemonProvider: React.FC = ({ children }) => {
   const [pokemons, setPokemons] = useState<Pokemon[]>([]);
+  const [pokemonDetails, setPokemonDetails] = useState<PokemonDetails | null>(null);
 
   useEffect(() => {
     async function loadPokemons() {
-      const response = await api.get('pokemon?limit=300');
-      const fetchedPokemons = response.data.results.map(
-        (pokemon: any, index: number) => ({
-          ...pokemon,
-          id: index + 1,
-        }),
-      );
+      const response = await api.get('pokemon?limit=30');
+      const fetchedPokemons = response.data.results.map((pokemon: any, index: number) => ({
+        ...pokemon,
+        id: index + 1,
+      }));
       setPokemons(fetchedPokemons);
     }
     loadPokemons();
   }, []);
 
-  function getPokemonById(id: number): Pokemon | undefined {
-    return pokemons.find(pokemon => pokemon.id === id);
+  async function getPokemonById(id: number): Promise<PokemonDetails | null> {
+    try {
+      const response = await api.get(`pokemon/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching Pokémon details:', error);
+      return null;
+    }
   }
 
   function searchPokemon(name: string): Pokemon[] {
@@ -60,6 +74,7 @@ export const PokemonProvider: React.FC = ({ children }) => {
     <PokemonContext.Provider
       value= {{
     pokemons,
+      pokemonDetails,
       getPokemonById,
       searchPokemon,
       sortPokemonsByName,
