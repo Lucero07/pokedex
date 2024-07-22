@@ -1,16 +1,22 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
 import PokemonCard from '../components/PokemonCard';
 import SortMenu from '../components/SortMenu';
 import SearchBar from '../components/SearchBar';
 import { usePokemon } from '../hooks/usePokemon';
+import { NavigationProp } from '@react-navigation/native';
 
-const HomeScreen: React.FC = () => {
+type HomeScreenProps = {
+  navigation: NavigationProp<any>;
+};
+
+const HomeScreen: React.FC<HomeScreenProps> = () => {
   const [search, setSearch] = useState('');
-  const { pokemons, searchPokemon, sortPokemonsByName, sortPokemonsById } = usePokemon();
-
+  const { pokemons, searchPokemon} = usePokemon();
   const filteredPokemons = search ? searchPokemon(search) : pokemons;
 
+
+ 
   return (
     <View style={styles.container}>
       <View style={styles.actions}>

@@ -17,6 +17,10 @@ interface PokemonDetails {
   stats: { stat: { name: string }; base_stat: number }[];
 }
 
+interface PokemonProviderProps {
+  children: React.ReactNode;
+}
+
 interface PokemonContextData {
   pokemons: Pokemon[];
   pokemonDetails: PokemonDetails | null;
@@ -24,21 +28,26 @@ interface PokemonContextData {
   searchPokemon(name: string): Pokemon[];
   sortPokemonsByName(): void;
   sortPokemonsById(): void;
+  setPokemonDetails: (details: PokemonDetails | null) => void;
 }
 
-const PokemonContext = createContext<PokemonContextData>({} as PokemonContextData);
+const PokemonContext = createContext<PokemonContextData>(
+  {} as PokemonContextData,
+);
 
-export const PokemonProvider: React.FC = ({ children }) => {
+export const PokemonProvider: React.FC<PokemonProviderProps> = ({ children }) => {
   const [pokemons, setPokemons] = useState<Pokemon[]>([]);
   const [pokemonDetails, setPokemonDetails] = useState<PokemonDetails | null>(null);
 
   useEffect(() => {
     async function loadPokemons() {
       const response = await api.get('pokemon?limit=30');
-      const fetchedPokemons = response.data.results.map((pokemon: any, index: number) => ({
-        ...pokemon,
-        id: index + 1,
-      }));
+      const fetchedPokemons = response.data.results.map(
+        (pokemon: any, index: number) => ({
+          ...pokemon,
+          id: index + 1,
+        }),
+      );
       setPokemons(fetchedPokemons);
     }
     loadPokemons();
@@ -46,6 +55,10 @@ export const PokemonProvider: React.FC = ({ children }) => {
 
   async function getPokemonById(id: number): Promise<PokemonDetails | null> {
     try {
+      if (!id) {
+        console.error('ID is undefined');
+        return null;
+      }
       const response = await api.get(`pokemon/${id}`);
       return response.data;
     } catch (error) {
@@ -72,18 +85,18 @@ export const PokemonProvider: React.FC = ({ children }) => {
 
   return (
     <PokemonContext.Provider
-      value= {{
-    pokemons,
-      pokemonDetails,
-      getPokemonById,
-      searchPokemon,
-      sortPokemonsByName,
-      sortPokemonsById,
-      }
-}
+      value={{
+        pokemons,
+        pokemonDetails,
+        getPokemonById,
+        searchPokemon,
+        sortPokemonsByName,
+        sortPokemonsById,
+        setPokemonDetails
+      }}
     >
-  { children }
-  </PokemonContext.Provider>
+      {children}
+    </PokemonContext.Provider>
   );
 };
 

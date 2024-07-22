@@ -7,10 +7,34 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import ProgressBar from 'react-native-progress/Bar'; 
-import { Ionicons } from 'react-native-vector-icons'; 
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
+import ProgressBar from 'react-native-progress/Bar';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { usePokemon } from '../hooks/usePokemon';
+import Chip from '../components/ChipType';
+import { useBackgroundColor } from '../context/BackgroundColorContext';
+
+const typeColors: { [key: string]: string } = {
+  grass: '#74CB48',
+  fire: '#F57D31',
+  water: '#6493EB',
+  electric: '#F9CF30',
+  psychic: '#FB5584',
+  ice: '#9AD6DF',
+  dragon: '#7037FF',
+  dark: '#75574C',
+  fairy: '#E69EAC',
+  fighting: '#C12239',
+  flying: '#A891EC',
+  poison: '#A43E9E',
+  ground: '#DEC16B',
+  rock: '#B69E31',
+  bug: '#A7B723',
+  ghost: '#70559B',
+  steel: '#B7B9D0',
+  normal: '#AAA67F',
+};
+
 
 type RootStackParamList = {
   Detail: { id: number };
@@ -22,6 +46,7 @@ const DetailScreen: React.FC = () => {
   const { id } = route.params;
   const { getPokemonById } = usePokemon();
   const [pokemonDetails, setPokemonDetails] = useState<any>(null);
+  const { backgroundColor, setBackgroundColor } = useBackgroundColor();
 
   useEffect(() => {
     const fetchPokemonDetails = async () => {
@@ -34,6 +59,8 @@ const DetailScreen: React.FC = () => {
         const pokemonData = await getPokemonById(id);
         if (pokemonData) {
           setPokemonDetails(pokemonData);
+          const primaryType = pokemonData.types[0]?.type.name;
+          setBackgroundColor(typeColors[primaryType] || '#DC0A2D');
         } else {
           console.error('Pokémon not found');
         }
@@ -42,7 +69,15 @@ const DetailScreen: React.FC = () => {
       }
     };
     fetchPokemonDetails();
-  }, [id, getPokemonById]);
+  }, [id, getPokemonById, setBackgroundColor]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      return () => {
+        setBackgroundColor('#DC0A2D'); // Restablecer al color predeterminado
+      };
+    }, [setBackgroundColor])
+  );
 
   const handleNext = () => {
     const nextPokemonId = id + 1;
@@ -60,7 +95,7 @@ const DetailScreen: React.FC = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.halfBackgroundTop} />
+      <View style={[styles.halfBackgroundTop, { backgroundColor }]} />
       <View style={styles.halfBackgroundBottom} />
       <View style={styles.imageContainer}>
         <Image
@@ -81,6 +116,15 @@ const DetailScreen: React.FC = () => {
       </View>
       <View style={styles.infoContainer}>
         <Text style={styles.name}> {pokemonDetails.name} </Text>
+        <View style={styles.typesContainer}>
+          {pokemonDetails.types.map((typeInfo: any) => (
+            <Chip
+              key={typeInfo.type.name}
+              type={typeInfo.type.name}
+              color={typeColors[typeInfo.type.name] || '#CCCCCC'}
+            />
+          ))}
+        </View>
         <View style={styles.row}>
           <Text style={styles.label}> Weight: </Text>
           <Text style={styles.value}> {pokemonDetails.weight / 10} kg </Text>
@@ -117,7 +161,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: '50%',
-    backgroundColor: '#DC0A2D',
   },
   halfBackgroundBottom: {
     position: 'absolute',
@@ -128,7 +171,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   imageContainer: {
-    alignItems: 'center' ,
+    alignItems: 'center',
+    marginVertical: 20,
   },
   image: {
     width: 200,
@@ -161,6 +205,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     textTransform: 'capitalize',
+  },
+  typesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginBottom: 10,
   },
   row: {
     flexDirection: 'row',
